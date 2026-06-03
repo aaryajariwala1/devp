@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: takatrack_db
+    environment:
+      POSTGRES_USER: takatrack
+      POSTGRES_PASSWORD: takatrack_secret
+      POSTGRES_DB: takatrack_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U takatrack -d takatrack_db']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: takatrack_api
+    env_file: .env
+    ports:
+      - '8000:8000'
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - model_cache:/app/model_cache
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  model_cache:
